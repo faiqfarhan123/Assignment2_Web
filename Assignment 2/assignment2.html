@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script type = "text/javascript" src = "http://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<style>
+canvas {
+    border:1px solid #fff;
+    background-color: black;
+}
+h1{
+	margin-left: 300px;
+}
+h2{
+	margin-left: 350px;
+}
+.p1{
+	margin-left: 220px;
+	font-size: 20px;
+}
+.p2{
+	margin-left: 140px;
+	font-size: 20px;
+}
+</style>
+</head>
+<body onload="startGame()">
+<h1 > Obstacle Avoider</h1>
+<h2> How to Play:	</h2>
+<p class = "p1"> 
+Use arrow keys to move Up, Down, Left and Right. </p>
+	
+<p class = "p2">	
+Press Spacebar to activate Gravity and Press it Frequently to overcome the hurdle.
+</p>
+
+<script>
+<!-- declaring variables -->
+var myGamePiece;
+var myObstacles = [];
+var myScore;
+
+<!-- start game function -->
+function startGame() {
+	<!-- make a new component whom we'll control -->
+    myGamePiece = new component(30, 30, "white", 10, 120);
+	<!-- make a new component for score display -->
+	myScore = new component("30px", "Consolas", "white", 280, 40, "text");
+    myGameArea.start();
+}
+
+var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+	<!-- sets width and height of canvas -->
+        this.canvas.width = 870;
+        this.canvas.height = 370;
+		<!-- converts canvas into 2d -->
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 20);
+        },
+		<!-- clears width and height of canvas -->
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+	<!-- stops animation -->
+    stop : function() {
+        clearInterval(this.interval);
+    }
+}
+
+function component(width, height, color, x, y, type) {
+	this.type = type;
+    this.width = width;
+    this.height = height;
+	this.score = 0;
+    this.speedX = 0;
+    this.speedY = 0;
+    this.x = x;
+    this.y = y;
+	<!-- updates score dynamically -->
+    this.update = function() {
+        ctx = myGameArea.context;
+        if (this.type == "text") {
+            ctx.font = this.width + " " + this.height;
+            ctx.fillStyle = color;
+            ctx.fillText(this.text, this.x, this.y);
+        } else {
+            ctx.fillStyle = color;
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+    }
+	<!-- finds new position of x and y -->
+    this.newPos = function() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+    }
+	<!-- checks if object crashes with obstacles, then stop game -->
+    this.crashWith = function(otherobj) {
+		
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+		<!-- checks distance of object from obstacles in every direction -->
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+            crash = false;
+        }
+        return crash;
+    }
+}
+
+function updateGameArea() {
+<!-- if crashes with obstacles then game is stopped -->
+    var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+    for (i = 0; i < myObstacles.length; i += 1) {
+        if (myGamePiece.crashWith(myObstacles[i])) {
+            myGameArea.stop();
+            return;
+        }
+    }
+    myGameArea.clear();
+	<!-- increments frames of gamearea -->
+    myGameArea.frameNo += 1;
+	<!-- one obstacle is pushed every 3 seconds -->
+    if (myGameArea.frameNo == 1 || everyinterval(150)) {
+        x = myGameArea.canvas.width;
+        minHeight = 20;
+        maxHeight = 200;
+		<!-- randomly calculating position of obstacles to be pushed -->
+        height = Math.floor(Math.random()*(maxHeight-minHeight+1)+minHeight);
+        minGap = 50;
+        maxGap = 200;
+		<!-- checks gap in between obstacles -->
+        gap = Math.floor(Math.random()*(maxGap-minGap+1)+minGap);
+		<!-- push obstacles -->
+        myObstacles.push(new component(10, height, "red", x, 0));
+        myObstacles.push(new component(10, x - height - gap, "red", x, height + gap));
+    }
+	<!-- updates obstacles -->
+    for (i = 0; i < myObstacles.length; i += 1) {
+        myObstacles[i].x += -1;
+        myObstacles[i].update();
+    }
+	<!-- stores frame numbers in score -->
+	myScore.text="SCORE: " + myGameArea.frameNo;
+    myScore.update();
+    myGamePiece.newPos();
+	<!-- updates score -->
+    myGamePiece.update();
+}
+<!-- calculating frames per screen -->
+function everyinterval(n) {
+    if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    return false;
+}
+<!-- move up function -->
+function moveup() {
+    myGamePiece.speedY = -2;
+}
+<!-- move down function -->
+function movedown() {
+    myGamePiece.speedY = 2;
+}
+<!-- move left function -->
+function moveleft() {
+    myGamePiece.speedX = -2;
+}
+<!-- move right function -->
+function moveright() {
+    myGamePiece.speedX = 2;
+}
+<!-- clear move function -->
+function clearmove() {
+    myGamePiece.speedX = 0;
+    myGamePiece.speedY = 0;
+}
+$(document).ready(function() {
+  $(document).keydown(function(move) {  //keydown, occurs when key is pressed down
+
+    move.preventDefault();    // prevent the default action 
+
+    switch(move.which) {
+        case 37:              // moves left, left arrow key
+          moveleft();
+        break;
+        case 38:              // moves up, up arrow key
+          moveup();        
+        break;
+        case 39:              // moves right, right arrow key
+          moveright();
+        break;
+        case 40:              // moves down, down array key
+          movedown(); 
+        break;
+		case 32:               // Jumps, spacebar key
+          myGamePiece.speedY = -4;
+    
+    }
+    });
+  $(document).keyup(function(move) {  //keyup, occurs when key is released 
+
+    move.preventDefault();    // prevent the default action
+    switch(move.which) {
+        case 37:              // moves left, left arrow key
+          clearmove();
+        break;
+        case 38:              // moves up, up arrow key
+          clearmove();        
+        break;
+        case 39:              // moves right, right arrow key
+          clearmove();
+        break;
+        case 40:              // moves down, down array key
+          clearmove(); 
+        break; 
+		case 32:               // Jumps, spacebar key
+          myGamePiece.speedY = +1;
+		  
+    }
+    });
+});
+</script>
+
+</body>
+</html>
+
